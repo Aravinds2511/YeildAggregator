@@ -52,6 +52,7 @@ contract SimpleStakingStrategy is Strategy {
      * @return The balance in the underlying asset.
      */
     function balanceOfUnderlying() public view override returns (uint256) {
-        return stakingPool.balanceOf(address(this));
+        uint256 balance = stakingPool.balanceOf(address(this)) + stakingPool.earned(address(this));
+        return balance;
     }
 }

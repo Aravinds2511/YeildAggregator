@@ -8,5 +8,7 @@ interface IStakingPool {
 
     function balanceOf(address account) external view returns (uint256);
 
+    function earned(address _account) external view returns (uint256);
+
     function getReward() external;
 }
