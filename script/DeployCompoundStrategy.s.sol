@@ -13,7 +13,7 @@ contract DeploySimpleStakingStrategy is Script {
 
     function run() external {
         vm.startBroadcast();
-        CompoundStrategy compoundStrategy = new CompoundStrategy(IERC20(underlying), ICompoundCToken(cToken));
+        CompoundStrategy compoundStrategy = new CompoundStrategy(IERC20(underlying), cToken);
         vm.stopBroadcast();
 
         console.log("CompoundStrategy Contract deployed at: ", address(compoundStrategy));
