@@ -85,7 +85,7 @@ contract Vault is ERC4626, Ownable {
         if (owner == address(0)) revert NotValidAddress();
 
         uint256 shares = previewWithdraw(assets); // Calculate shares to burn for the asset amount
-        if(balanceOf(owner) < shares) revert InsufficientShares();
+        if (balanceOf(owner) < shares) revert InsufficientShares();
 
         // Burn shares from the owner
         _burn(owner, shares);
