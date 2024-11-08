@@ -14,8 +14,8 @@ contract CompoundStrategy is Strategy {
     ICompoundCToken public cToken;
     IERC20 public immutable UNDERLYING;
 
-    constructor(IERC20 _underlyingAsset, ICompoundCToken _cToken) Strategy(_underlyingAsset) {
-        cToken = _cToken;
+    constructor(IERC20 _underlyingAsset, address _cToken) Strategy(_underlyingAsset) {
+        cToken = ICompoundCToken(_cToken);
         UNDERLYING = _underlyingAsset;
     }
 
@@ -50,6 +50,13 @@ contract CompoundStrategy is Strategy {
      * @return The balance in the underlying asset.
      */
     function balanceOfUnderlying() public view override returns (uint256) {
+        uint256 cTokenBalance = cToken.balanceOf(address(this));
+        uint256 exchangeRate = cToken.exchangeRateStored();
+        return (cTokenBalance * exchangeRate) / 10 ** 16;
+        // return (cTokenBal * exchangeRate) / 10**( decimals + cTokenDecimals);
+    }
+
+    function balanceUnderlying() public returns (uint256) {
         return cToken.balanceOfUnderlying(address(this));
     }
 

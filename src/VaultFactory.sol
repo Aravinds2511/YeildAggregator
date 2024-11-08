@@ -5,9 +5,12 @@ import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {Vault} from "src/Vault.sol";
-import {Strategy} from "./Strategy.sol";
 
 contract VaultFactory is Ownable {
+    //Custom Errors
+    error ZeroAddress();
+    error InvalidParameters();
+
     // Array to hold all deployed vaults
     Vault[] public vaults;
 
@@ -17,7 +20,14 @@ contract VaultFactory is Ownable {
     constructor() Ownable(msg.sender) {}
 
     //Deploys a new Vault contract with a unique address determined by CREATE2.
-    function deployVault(ERC20 asset, string memory name, string memory symbol) external returns (Vault vault) {
+    function deployVault(ERC20 asset, string memory name, string memory symbol)
+        external
+        onlyOwner
+        returns (Vault vault)
+    {
+        if (address(asset) == address(0)) revert ZeroAddress();
+        if (bytes(name).length == 0 || bytes(symbol).length == 0) revert InvalidParameters();
+
         // Use CREATE2 to deploy a new Vault contract, with a unique salt derived from the asset's address
         vault = new Vault{salt: fillLast12Bytes(address(asset))}(asset, msg.sender, name, symbol);
 
