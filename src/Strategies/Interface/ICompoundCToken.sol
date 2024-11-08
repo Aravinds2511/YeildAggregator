@@ -6,7 +6,9 @@ interface ICompoundCToken {
 
     function redeemUnderlying(uint256 redeemAmount) external returns (uint256);
 
-    function balanceOfUnderlying(address account) external view returns (uint256);
+    function balanceOfUnderlying(address account) external returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
+
+    function exchangeRateStored() external view returns (uint256);
 }

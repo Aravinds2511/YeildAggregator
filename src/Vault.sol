@@ -12,20 +12,24 @@ import {Strategy} from "./Strategy.sol";
  * @dev ERC-4626 compliant vault with multiple strategies.
  */
 contract Vault is ERC4626, Ownable {
+    // Custom Errors
+    error ZeroAmountNotAllowed();
+    error NotValidAddress();
     error StrategyAlreadyActive();
     error StrategyNotActive();
     error NoActiveStrategies();
     error InsufficientAssets();
+    error InsufficientShares();
 
     struct StrategyData {
         bool active;
         uint256 balance; // Amount allocated to this strategy
     }
 
-    // Underlying asset (e.g., DAI)
+    // Underlying asset (e.g., DAI etc.. or custom tokens)
     IERC20 public immutable UNDERLYING;
 
-    uint256 public totalAmountWithProfits;
+    // uint256 public totalAmountWithProfits;
 
     // Mapping from Strategy to its data
     mapping(Strategy => StrategyData) public strategies;
@@ -55,8 +59,8 @@ contract Vault is ERC4626, Ownable {
      * @dev Deposits assets into the vault and allocates equally among strategies.
      */
     function deposit(uint256 assets, address receiver) public override returns (uint256) {
-        require(assets > 0, "Deposit amount must be greater than zero");
-        require(receiver != address(0), "Receiver cannot be zero address");
+        if (assets <= 0) revert ZeroAmountNotAllowed();
+        if (receiver == address(0)) revert NotValidAddress();
 
         // Transfer assets from sender to vault
         UNDERLYING.transferFrom(msg.sender, address(this), assets);
@@ -76,12 +80,12 @@ contract Vault is ERC4626, Ownable {
      * @dev Withdraws assets from the vault proportionate to the user's shares.
      */
     function withdraw(uint256 assets, address receiver, address owner) public override returns (uint256) {
-        require(assets > 0, "Withdraw amount must be greater than zero");
-        require(receiver != address(0), "Receiver cannot be zero address");
-        require(owner != address(0), "Owner cannot be zero address");
+        if (assets <= 0) revert ZeroAmountNotAllowed();
+        if (receiver == address(0)) revert NotValidAddress();
+        if (owner == address(0)) revert NotValidAddress();
 
         uint256 shares = previewWithdraw(assets); // Calculate shares to burn for the asset amount
-        require(balanceOf(owner) >= shares, "Insufficient shares");
+        if(balanceOf(owner) < shares) revert InsufficientShares();
 
         // Burn shares from the owner
         _burn(owner, shares);
