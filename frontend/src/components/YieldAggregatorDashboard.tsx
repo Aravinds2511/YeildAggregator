@@ -28,7 +28,9 @@ interface VaultContract extends ethers.Contract {
   totalAssets: () => Promise<bigint>;
   decimals: () => Promise<number>;
   balanceOf: (account: string) => Promise<bigint>;
-  getStrategiesCount: () => Promise<number>;
+  getStrategiesCount: () => Promise<bigint>;
+  strategies: (strategyAddress: string) => Promise<{ active: boolean; balance: bigint }>;
+  activeStrategies: (index: bigint) => Promise<string>;
   deposit: (assets: bigint, receiver: string) => Promise<ethers.TransactionResponse>;
   withdraw: (assets: bigint, receiver: string, owner: string) => Promise<ethers.TransactionResponse>;
   asset: () => Promise<string>;
@@ -75,7 +77,7 @@ const YieldAggregatorDashboard = () => {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.ethereum && !provider) {
-      const newProvider = new ethers.BrowserProvider(window.ethereum);
+      const newProvider = new ethers.JsonRpcProvider(AMOY_RPC_URL);
       setProvider(newProvider);
 
       // Check initial connection status
@@ -162,7 +164,7 @@ const YieldAggregatorDashboard = () => {
 
       // Verify the contract exists
       const code = await provider.getCode(VAULT_FACTORY_ADDRESS);
-      console.log('Contract code:', code);
+      // console.log('Contract code:', code);
 
       if (code === '0x' || code === '0x0') {
         throw new Error('No contract deployed at this address. Please verify the network and contract address.');
@@ -195,48 +197,49 @@ const YieldAggregatorDashboard = () => {
       const vaultCount: bigint = await factoryContract.getVaultCount();
       console.log('Vault count:', vaultCount.toString());
 
-      try {
-        // Try getting the first vault address directly
-        const firstVaultAddress = await factoryContract.getVault(0n);
-        console.log('First vault address:', firstVaultAddress);
+      const vaultsArray: Vault[] = [];
 
-        if (firstVaultAddress && firstVaultAddress !== '0x0000000000000000000000000000000000000000') {
-          try {
-            const vaultContract = new ethers.Contract(firstVaultAddress, VaultABI.abi, signer) as VaultContract;
+      for (let i = 0n; i < vaultCount; i++) {
+        try {
+          const vaultAddress = await factoryContract.getVault(i);
+          console.log(`Vault address at index ${i}: ${vaultAddress}`);
+
+          if (
+            vaultAddress &&
+            vaultAddress !== '0x0000000000000000000000000000000000000000' &&
+            vaultAddress !== ethers.ZeroAddress
+          ) {
+            const vaultContract = new ethers.Contract(vaultAddress, VaultABI.abi, signer) as VaultContract;
             console.log('Created vault contract instance');
 
             const name = await vaultContract.name();
-            console.log('Vault name:', name);
-
             const symbol = await vaultContract.symbol();
             const totalAssets = await vaultContract.totalAssets();
             const decimals = await vaultContract.decimals();
-
-            console.log('Vault details:', { name, symbol, totalAssets: totalAssets.toString(), decimals });
+            const strategies = await vaultContract.getStrategiesCount();
 
             const formattedTotalAssets = ethers.formatUnits(totalAssets, decimals);
 
-            const vault = {
-              address: firstVaultAddress,
+            const vault: Vault = {
+              address: vaultAddress,
               name,
               symbol,
               totalAssets: formattedTotalAssets,
-              apy: 'N/A',
-              strategies: 0,
-              tvl: formattedTotalAssets,
+              apy: 'N/A', // Replace with actual APY if available
+              strategies: Number(strategies),
+              tvl: formattedTotalAssets, // Replace with actual TVL if different
             };
 
-            console.log('Setting vault:', vault);
-            setVaults([vault]);
-          } catch (vaultError) {
-            console.error('Error loading vault details:', vaultError);
-            setError('Failed to load vault details');
+            console.log('Adding vault:', vault);
+            vaultsArray.push(vault);
           }
+        } catch (vaultError) {
+          console.error(`Error getting vault at index ${i}:`, vaultError);
+          // Optionally handle individual vault load errors
         }
-      } catch (vaultError) {
-        console.error('Error getting vault address:', vaultError);
-        setError('Failed to get vault address');
       }
+
+      setVaults(vaultsArray);
     } catch (error: any) {
       console.error('Error in loadVaults:', error);
       setError(error.message || 'Failed to load vaults');
@@ -379,7 +382,7 @@ const YieldAggregatorDashboard = () => {
   const verifyContract = async () => {
     try {
       const code = await provider?.getCode(VAULT_FACTORY_ADDRESS);
-      console.log('Contract code:', code);
+      // console.log('Contract code:', code);
       if (code === '0x') {
         console.error('No contract deployed at this address');
       }
@@ -402,11 +405,11 @@ const YieldAggregatorDashboard = () => {
       try {
         // Check network connection
         const network = await provider.getNetwork();
-        console.log('Current network:', network.toJSON());
+        console.log('Current network:', network);
 
         // Check if contract exists at address
         const code = await provider.getCode(VAULT_FACTORY_ADDRESS);
-        console.log('Contract exists:', code !== '0x');
+        // console.log('Contract code:', code);
 
         if (code === '0x') {
           console.error('No contract found at address:', VAULT_FACTORY_ADDRESS);
@@ -426,7 +429,7 @@ const YieldAggregatorDashboard = () => {
         }
       } catch (error) {
         console.error('Setup verification failed:', error);
-        setError('Failed to verify contract setup');
+        setError(`Failed to verify contract setup: ${error.message}`);
       }
     };
 
@@ -484,6 +487,13 @@ const YieldAggregatorDashboard = () => {
 
     debugContract();
   }, [vaultFactoryContract, signer]);
+
+  useEffect(() => {
+    if (!provider) {
+      const newProvider = new ethers.JsonRpcProvider(AMOY_RPC_URL);
+      setProvider(newProvider);
+    }
+  }, [provider]);
 
   return (
     <div className="container mx-auto p-4">
