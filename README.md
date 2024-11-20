@@ -1,6 +1,6 @@
 # Yield Aggregator
 
-The **Yield Aggregator ** is a robust, modular contract designed to manage and allocate funds to multiple yield farming strategies. It complies with the **ERC-4626 Tokenized Vault Standard**, providing a seamless interface for deposits, withdrawals, and yield generation. The vault supports dynamic strategy addition, removal, and reallocation of funds to optimize returns.
+The **Yield Aggregator** is a robust, modular contract designed to manage and allocate funds to multiple yield farming strategies. It complies with the **ERC-4626 Tokenized Vault Standard**, providing a seamless interface for deposits, withdrawals, and yield generation. The vault supports dynamic strategy addition, removal, and reallocation of funds to optimize returns.
 
 ---
 
