@@ -139,6 +139,12 @@ The Vault fully adheres to the ERC-4626 standard, including the following functi
 - `previewWithdraw(uint256 assets)`: Calculates the asset equivalent for a given share amount.
 
 ---
+## Additional Documentation
+
+For more detailed information, refer to the following files:
+
+- [PDF](readme/yield_aggregator.pdf)
+- [Video](https://youtu.be/S7jpdKBNgp8)
 
 ## 🧪 **Testing**
 
